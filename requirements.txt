@@ -1,0 +1,7 @@
+dronekit==2.9.2
+future==0.18.2
+lxml==4.9.2
+monotonic==1.6
+numpy==1.24.1
+opencv-contrib-python==4.5.4.58
+pymavlink==2.4.37
