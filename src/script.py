@@ -5,7 +5,8 @@ import time
 import dronekit
 
 # Prompt the user to choose a connection type
-connection_type = input("Enter 's' to connect to SITL or 'h' to connect to APM 2.6: ")
+connection_type = input(
+    "Enter 's' to connect to SITL or 'h' to connect to APM 2.6: ")
 
 # Connect to the SITL or APM 2.6 based on the user's input
 if connection_type == "s":
@@ -17,16 +18,29 @@ elif connection_type == "h":
 else:
     print("Invalid input")
     sys.exit()
+while not vehicle.is_armable:
+    print(" Waiting for vehicle to initialise...")
+    time.sleep(1)
 
-# Wait for the vehicle to be ready
-# while not vehicle.is_armable:
-#     print(" Waiting for vehicle to initialise...")
-#     time.sleep(1)
+print("Arming motors")
+# Copter should arm in GUIDED mode
+vehicle.mode = dronekit.VehicleMode("GUIDED")
+vehicle.armed = True
 
-# Set the vehicle's mode to "GUIDED"
-print("Vehicle mode: ", vehicle.mode)
+# Confirm vehicle armed before attempting to take off
+while not vehicle.armed:
+    print(" Waiting for arming...")
+    time.sleep(1)
+
 # Take off to 10m
-vehicle.arm(wait=True)
-vehicle.send_mavlink()
-# Disconnect from the vehicle
-vehicle.close()
+altitude = 10
+vehicle.simple_takeoff(altitude)
+
+# Wait until the vehicle reaches the desired altitude
+while True:
+    print("Altitude: ", vehicle.location.global_relative_frame)
+    print("Attitude: ", vehicle.attitude)
+    if vehicle.location.global_relative_frame.alt >= altitude * 0.95:
+        print("Reached target altitude")
+        break
+    time.sleep(1)

@@ -71,15 +71,9 @@ def set_rc_channel_pwm(channel_id: int, pwm: int) -> None:
     logging.info("Setting channel value...")
     rc_channel_values = [65535 for _ in range(9)]
     rc_channel_values[channel_id - 1] = pwm
-    counter = 0
-    while True:
-        time.sleep(1)
-        counter += 1
-        master.mav.rc_channels_override_send(master.target_system,
-                                             master.target_component,
-                                             *rc_channel_values)
-        if counter == 10:
-            break
+    master.mav.rc_channels_override_send(master.target_system,
+                                         master.target_component,
+                                         *rc_channel_values)
 
 
 master = mavutil.mavlink_connection(device="127.0.0.1:14551",
@@ -88,12 +82,12 @@ master = mavutil.mavlink_connection(device="127.0.0.1:14551",
 master.wait_heartbeat()
 # print(dir(master))
 print(f'Hearbeat from ({master.target_system},{master.target_component})')
-master.arducopter_arm()
-while True:
-    msg = master.recv_match(type="COMMAND_ACK", blocking=True)
-    msg = msg.to_dict()
-    if msg['command'] != mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
-        continue
-    print(mavutil.mavlink.enums["MAV_RESULT"][msg['result']].description)
-    break
-set_rc_channel_pwm(3, 1200)
+# master.arducopter_arm()
+# while True:
+#     msg = master.recv_match(type="COMMAND_ACK", blocking=True)
+#     msg = msg.to_dict()
+#     if msg['command'] != mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
+#         continue
+#     print(mavutil.mavlink.enums["MAV_RESULT"][msg['result']].description)
+#     break
+set_rc_channel_pwm(5, 1400)

@@ -47,22 +47,29 @@ logging.info("Armed!")
 #                              0, 0, 0, 10)
 # log_message(master)
 target_x = 10
-# master.mav.send(
-#     mavutil.mavlink.MAVLink_set_position_target_local_ned_message(
-#         10, master.target_system, master.target_component,
-#         mavutil.mavlink.MAV_FRAME_LOCAL_NED, 0b100111111000, target_x, 0, -15,
-#         0, 0, 0, 0, 0, 0, 1.57, 0))
-
+# Send the vehicle to the given (x,y,z)
 master.mav.send(
-    mavutil.mavlink.MAVLink_set_position_target_global_int_message(
+    mavutil.mavlink.MAVLink_set_position_target_local_ned_message(
         10, master.target_system, master.target_component,
-        mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, 0b110111111000,
-        int(-35.3606274 * 10**7), int(149.1721487 * 10**7), 15, 0, 0, 0, 0, 0,
-        0, 1.57, 0))
+        mavutil.mavlink.MAV_FRAME_LOCAL_NED, 0b110111111000, target_x, 0, -15,
+        0, 0, 0, 0, 0, 0, 1.57, 0))
+
+# Sending vehicle to the given lat lon and alt
+# master.mav.send(
+#     mavutil.mavlink.MAVLink_set_position_target_global_int_message(
+#         10, master.target_system, master.target_component,
+#         mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, 0b110111111000,
+#         int(-35.3606274 * 10**7), int(149.1721487 * 10**7), 15, 0, 0, 0, 0, 0,
+#         0, 1.57, 0))
+
+# master.mav.mission_item_send(0, 0, 0,
+#                              mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+#                              mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 2, 0, 0, 0,
+#                              0, 0, location.lat, location.lon, alt)
 
 while True:
     msg = master.recv_match(type='LOCAL_POSITION_NED', blocking=True)
     print(msg.to_dict())
-    # if msg.to_dict()['x'] > target_x - 0.2:
-    #     break
+    if msg.to_dict()['x'] > target_x - 0.2:
+        break
 logging.info("Reached target position!")
