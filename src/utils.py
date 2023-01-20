@@ -1,4 +1,7 @@
 import math
+from typing import Union
+
+from pymavlink import mavutil
 
 
 def get_location_metres(original_location, dNorth, dEast):
@@ -57,3 +60,16 @@ def uav_to_ne(x_uav, y_uav, yaw_rad):
 
 def check_angle_descend(angle_x, angle_y, angle_desc):
     return (math.sqrt(angle_x**2 + angle_y**2) <= angle_desc)
+
+
+def request_message_interval(master: Union[mavutil.mavfile, mavutil.mavudp,
+                                           mavutil.mavtcp], message_id: int,
+                             frequency_hz: float) -> None:
+    """
+        Function to request mav message at given frequency
+    """
+
+    master.mav.command_long_send(master.target_system, master.target_component,
+                                 mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,
+                                 0, message_id, 1e6 / frequency_hz, 0, 0, 0, 0,
+                                 0)

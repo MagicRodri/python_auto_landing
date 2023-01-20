@@ -15,6 +15,7 @@ from utils import (
     check_angle_descend,
     get_location_metres,
     marker_position_to_angle,
+    request_message_interval,
     uav_to_ne,
 )
 
@@ -69,7 +70,6 @@ while True:
     if current_altitude >= altitude * 0.95:
         logging.info("Reached target altitude")
         break
-    time.sleep(1)
 
 # Parameters
 rad_2_deg = 180.0 / math.pi
@@ -98,7 +98,10 @@ aruco_tracker = ArucoSingleTracker(id_to_find=id_to_find,
                                    camera_distortion=camera_distortion)
 
 time_0 = time.time()
+request_message_interval(vehicle,
+                         mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, 8)
 
+request_message_interval(vehicle, mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 8)
 while True:
 
     marker_found, x_cm, y_cm, z_cm = aruco_tracker.track(loop=False)
@@ -131,13 +134,15 @@ while True:
 
             marker_lat, marker_lon = get_location_metres(
                 uav_location, north * 0.01, east * 0.01)
-            # If angle is good, descend
+
             if check_angle_descend(angle_x, angle_y, angle_descend):
+                # If angle is good enough, descend
                 logging.info("Low error: descending")
                 location_marker = (marker_lat, marker_lon,
                                    uav_location['relative_alt'] / 1000.0 -
                                    (land_speed_cms * 0.01 / freq_send))
             else:
+                # Else get closer at the current altitude
                 location_marker = (marker_lat, marker_lon,
                                    uav_location['relative_alt'] / 1000.0)
 
@@ -149,14 +154,13 @@ while True:
                 "UAV Location    Lat = %.7f  Lon = %.7f" %
                 (uav_location['lat'] / 1e7, uav_location['lon'] / 1e7))
             logging.info("Commanding to   Lat = %.7f  Lon = %.7f" %
-                         (location_marker[0] / 1e7, location_marker[1] / 1e7))
+                         (location_marker[0], location_marker[1]))
 
         # Command to land
         if z_cm <= land_alt_cm:
             if vehicle.flightmode == "GUIDED":
                 logging.info(" -->>COMMANDING TO LAND<<")
                 change_mode(vehicle, 'LAND')
-                break
 
 # vehicle.arducopter_disarm()
 # vehicle.motors_diarmed_wait()

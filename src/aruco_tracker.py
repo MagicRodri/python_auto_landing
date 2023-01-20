@@ -239,7 +239,8 @@ class ArucoSingleTracker():
                     cv2.destroyAllWindows()
                     break
 
-            if not loop: return (marker_found, x, y, z)
+            if not loop:
+                return (marker_found, x, y, z)
 
 
 if __name__ == "__main__":
