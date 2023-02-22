@@ -3,25 +3,15 @@ import time
 
 from pymavlink import mavutil
 
+from utils import change_mode
+
 logging.basicConfig(level=logging.INFO)
 
 
 def log_message(master=None, msg=None):
     if msg is None:
         msg = master.recv_match(type='COMMAND_ACK', blocking=True)
-
     print(msg.to_dict())
-
-
-def change_mode(mode: str = None):
-    if mode is not None:
-        mode_id = master.mode_mapping().get(mode)
-
-        master.mav.set_mode_send(
-            master.target_system,
-            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, mode_id)
-
-        log_message(master)
 
 
 # Connect to the flight controller
@@ -32,8 +22,6 @@ master.wait_heartbeat()
 logging.info("Heartbeat from system (system %u component %u)" %
              (master.target_system, master.target_component))
 
-change_mode("GUIDED")
-
 # Arm the motors
 master.arducopter_arm()
 log_message(master)
@@ -42,10 +30,10 @@ log_message(master)
 master.motors_armed_wait()
 logging.info("Armed!")
 
-# master.mav.command_long_send(master.target_system, master.target_component,
-#                              mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0,
-#                              0, 0, 0, 10)
-# log_message(master)
+master.mav.command_long_send(master.target_system, master.target_component,
+                             mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0,
+                             0, 0, 0, 10)
+time.sleep(5)
 target_x = 10
 # Send the vehicle to the given (x,y,z)
 master.mav.send(

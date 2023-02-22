@@ -42,12 +42,12 @@ logging.info("Armed!")
 
 master.mav.command_long_send(master.target_system, master.target_component,
                              mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0,
-                             0, 0, 0, 10)
+                             0, 0, 0, 0.5)
 msg = master.recv_match(type='COMMAND_ACK', blocking=True)
 print(msg.to_dict())
 
 while True:
     # Current attitude
-    msg = master.recv_match(type='ATTITUDE', blocking=True)
-    print(msg.to_dict())
-    time.sleep(1)
+    msg = master.recv_match(type='GLOBAL_POSITION_INT',
+                            blocking=True).to_dict()
+    print(msg['relative_alt'])

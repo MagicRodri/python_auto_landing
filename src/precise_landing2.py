@@ -12,6 +12,7 @@ from pymavlink import mavutil
 from aruco_tracker import ArucoSingleTracker
 from utils import (
     camera_to_uav,
+    change_mode,
     check_angle_descend,
     get_location_metres,
     marker_position_to_angle,
@@ -21,22 +22,6 @@ from utils import (
 
 logging.basicConfig(level=logging.INFO)
 BASE_DIR = Path(__file__).resolve().parent
-
-
-def change_mode(master, mode: str = None):
-    if mode is not None:
-        mode_id = master.mode_mapping().get(mode)
-
-        master.mav.set_mode_send(
-            master.target_system,
-            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, mode_id)
-
-        ack_msg = master.recv_match(type="COMMAND_ACK", blocking=True)
-        if ack_msg is not None:
-            ack_msg = ack_msg.to_dict()
-            logging.info(mavutil.mavlink.enums["MAV_RESULT"][
-                ack_msg['result']].description)
-
 
 # Connect to the vehicle
 vehicle = mavutil.mavlink_connection('udp:127.0.0.1:14551')
@@ -57,7 +42,7 @@ vehicle.motors_armed_wait()
 # Confirm vehicle armed before attempting to take off
 
 # Take off to 10m
-altitude = 10
+altitude = 0.5
 vehicle.mav.command_long_send(vehicle.target_system, vehicle.target_component,
                               mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0,
                               0, 0, 0, altitude)
@@ -93,15 +78,11 @@ camera_distortion = np.loadtxt(calib_path / 'cameraDistortion.txt',
 aruco_tracker = ArucoSingleTracker(id_to_find=id_to_find,
                                    marker_size=marker_size,
                                    show_video=True,
-                                   video_device=2,
+                                   video_device=4,
                                    camera_matrix=camera_matrix,
                                    camera_distortion=camera_distortion)
 
 time_0 = time.time()
-request_message_interval(vehicle,
-                         mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, 8)
-
-request_message_interval(vehicle, mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 8)
 while True:
 
     marker_found, x_cm, y_cm, z_cm = aruco_tracker.track(loop=False)

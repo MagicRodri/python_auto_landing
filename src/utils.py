@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import Union
 
@@ -9,12 +10,6 @@ def get_location_metres(original_location, dNorth, dEast):
     Returns a Location object containing the latitude/longitude `dNorth` and `dEast` metres from the
     specified `original_location`. The returned Location has the same `alt and `is_relative` values
     as `original_location`.
-
-    The function is useful when you want to move the vehicle around specifying locations relative to
-    the current vehicle position.
-    The algorithm is relatively accurate over small distances (10m within 1km) except close to the poles.
-    For more information see:
-    http://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
     """
     earth_radius = 6378137.0  # Radius of "spherical" earth
     if isinstance(original_location, dict):
@@ -73,3 +68,18 @@ def request_message_interval(master: Union[mavutil.mavfile, mavutil.mavudp,
                                  mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,
                                  0, message_id, 1e6 / frequency_hz, 0, 0, 0, 0,
                                  0)
+
+
+def change_mode(master, mode: str = None):
+    if mode is not None:
+        mode_id = master.mode_mapping().get(mode)
+
+        master.mav.set_mode_send(
+            master.target_system,
+            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, mode_id)
+
+        ack_msg = master.recv_match(type="COMMAND_ACK", blocking=True)
+        if ack_msg is not None:
+            ack_msg = ack_msg.to_dict()
+            logging.info(mavutil.mavlink.enums["MAV_RESULT"][
+                ack_msg['result']].description)
