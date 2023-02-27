@@ -2,21 +2,10 @@ import logging
 import random
 import time
 
+import dronekit
 from pymavlink import mavutil
 
 logging.basicConfig(level=logging.INFO)
-
-
-def manual_control(master):
-    counter = 0
-    while True:
-        logging.info("Sending manual...")
-        counter += 1
-        master.mav.manual_control_send(master.target_system, 500, -500, 250,
-                                       500, 0)
-        time.sleep(1)
-        if counter == 3:
-            break
 
 
 def set_rc_channel_pwm(channel_id: int, pwm: int) -> None:
