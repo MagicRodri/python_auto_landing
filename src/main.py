@@ -2,7 +2,6 @@ import logging
 import random
 import time
 
-import dronekit
 from pymavlink import mavutil
 
 logging.basicConfig(level=logging.INFO)
@@ -34,16 +33,32 @@ print(f'Hearbeat from ({master.target_system},{master.target_component})')
 master.arducopter_arm()
 master.motors_armed_wait()
 print("Armed!")
-time.sleep(1)
-counter = 0
-while True:
-    logging.info("counter: %s" % (counter))
-    value = 1470
-    if counter == 10:
-        value = plus_minus(1450, 1)
-        set_rc_channel_pwm(3, value)
-        time.sleep(1)
-        continue
-    set_rc_channel_pwm(3, value)
-    time.sleep(1)
-    counter += 1
+# time.sleep(1)
+# counter = 0
+# while True:
+#     logging.info("counter: %s" % (counter))
+#     value = 1500
+#     if counter == 10:
+#         value = plus_minus(1500, 1)
+#         set_rc_channel_pwm(3, value)
+#         time.sleep(1)
+#         continue
+#     set_rc_channel_pwm(3, value)
+#     time.sleep(1)
+#     counter += 1
+
+for channel in range(1, 5):
+    master.mav.command_long_send(
+        1,  # target component ID
+        1,  # autopilot system ID
+        mavutil.mavlink.MAV_CMD_DO_REPEAT_SERVO,  # command ID
+        0,  # confirmation
+        channel,  # servo output channel (1-4)
+        1600,  # PWM value (1000-2000)
+        5,
+        1000,
+        0,
+        0,
+        0  # unused parameters
+    )
+    time.sleep(0.1)
