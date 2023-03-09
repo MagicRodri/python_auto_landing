@@ -1,8 +1,10 @@
 import logging
 import math
-from typing import Union
+from typing import Dict, Tuple, Union
 
 from pymavlink import mavutil
+
+logging.basicConfig(level=logging.INFO)
 
 
 def get_location_metres(original_location, dNorth, dEast):
@@ -38,13 +40,14 @@ def marker_position_to_angle(x, y, z):
     return (angle_x, angle_y)
 
 
-def camera_to_uav(x_cam, y_cam):
+def camera_to_uav(x_cam: float, y_cam: float) -> Tuple[float, float]:
     x_uav = -y_cam
     y_uav = x_cam
     return (x_uav, y_uav)
 
 
-def uav_to_ne(x_uav, y_uav, yaw_rad):
+def uav_to_ne(x_uav: float, y_uav: float,
+              yaw_rad: float) -> Tuple[float, float]:
     c = math.cos(yaw_rad)
     s = math.sin(yaw_rad)
 
@@ -83,3 +86,37 @@ def change_mode(master, mode: str = None):
             ack_msg = ack_msg.to_dict()
             logging.info(mavutil.mavlink.enums["MAV_RESULT"][
                 ack_msg['result']].description)
+
+
+def rc_override_pwm(master: Union[mavutil.mavfile, mavutil.mavudp,
+                                  mavutil.mavtcp],
+                    id: int,
+                    pwm: int,
+                    inputs: Dict[int, int] = None,
+                    mavlink2: bool = False) -> None:
+    """Override RC channels with PWM values.
+    @param master: MAVLink master instance
+    @param id: Channel ID
+    @param pwm: PWM value
+    @param inputs: Dictionary of channel IDs and PWM values
+    @param mavlink2: Use MAVLink 2.0 protocol
+        -By default, MAVLink 1.0 protocol is used
+    """
+    if inputs is None:
+        inputs = {}
+        inputs[id] = pwm
+    max_id = 9
+    if mavlink2:
+        max_id = 18
+    rc_channel_values = [65535 for _ in range(max_id)]
+    for channel_id, value in inputs.items():
+        if channel_id not in range(1, max_id + 1):
+            logging.warning('Invalid channel id: %s', channel_id)
+            return
+        if value not in [1100, 1900]:
+            logging.warning('Invalid value: %s', value)
+            return
+        rc_channel_values[channel_id - 1] = value
+    master.mav.rc_channels_override_send(master.target_system,
+                                         master.target_component,
+                                         *rc_channel_values)
