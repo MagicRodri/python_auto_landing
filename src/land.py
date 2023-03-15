@@ -1,23 +1,8 @@
 import logging
-
+from utils import change_mode
 from pymavlink import mavutil
 
 logging.basicConfig(level=logging.INFO)
-
-
-def change_mode(mode: str = None):
-    if mode is not None:
-        mode_id = master.mode_mapping().get(mode)
-
-        master.mav.set_mode_send(
-            master.target_system,
-            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, mode_id)
-
-        ack_msg = master.recv_match(type="COMMAND_ACK", blocking=True)
-        if ack_msg is not None:
-            ack_msg = ack_msg.to_dict()
-            print(mavutil.mavlink.enums["MAV_RESULT"][
-                ack_msg['result']].description)
 
 
 # Connect to the flight controller
@@ -28,4 +13,4 @@ master.wait_heartbeat()
 logging.info("Heartbeat from system (system %u component %u)" %
              (master.target_system, master.target_component))
 
-change_mode('LAND')
+change_mode(master,'LAND')

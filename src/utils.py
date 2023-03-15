@@ -4,8 +4,6 @@ from typing import Dict, Tuple, Union
 
 from pymavlink import mavutil
 
-logging.basicConfig(level=logging.INFO)
-
 
 def get_location_metres(original_location, dNorth, dEast):
     """
@@ -76,22 +74,24 @@ def request_message_interval(master: Union[mavutil.mavfile, mavutil.mavudp,
 def change_mode(master, mode: str = None):
     if mode is not None:
         mode_id = master.mode_mapping().get(mode)
-
         master.mav.set_mode_send(
             master.target_system,
             mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, mode_id)
-
         ack_msg = master.recv_match(type="COMMAND_ACK", blocking=True)
         if ack_msg is not None:
             ack_msg = ack_msg.to_dict()
-            logging.info(mavutil.mavlink.enums["MAV_RESULT"][
-                ack_msg['result']].description)
+            message = mavutil.mavlink.enums["MAV_RESULT"][
+                ack_msg['result']].description
+            if message == "Command is valid (is supported and has valid parameters), and was executed.":
+                logging.info("Mode changed to %s"%(mode))
+            else:
+                logging.info(message)
 
 
-def rc_override_pwm(master: Union[mavutil.mavfile, mavutil.mavudp,
+def rc_channels_override(master: Union[mavutil.mavfile, mavutil.mavudp,
                                   mavutil.mavtcp],
-                    id: int,
-                    pwm: int,
+                    id: int = None,
+                    pwm: int = None,
                     inputs: Dict[int, int] = None,
                     mavlink2: bool = False) -> None:
     """Override RC channels with PWM values.
@@ -113,10 +113,17 @@ def rc_override_pwm(master: Union[mavutil.mavfile, mavutil.mavudp,
         if channel_id not in range(1, max_id + 1):
             logging.warning('Invalid channel id: %s', channel_id)
             return
-        if value not in [1100, 1900]:
+        if value not in range(1000, 1901):
             logging.warning('Invalid value: %s', value)
             return
         rc_channel_values[channel_id - 1] = value
     master.mav.rc_channels_override_send(master.target_system,
                                          master.target_component,
                                          *rc_channel_values)
+
+def stop_rc_override(master: Union[mavutil.mavfile, mavutil.mavudp,
+                                  mavutil.mavtcp]) -> None:
+    """Stop RC override.
+    @param master: MAVLink master instance
+    """
+    rc_channels_override(master, 0, 0)

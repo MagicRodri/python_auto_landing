@@ -62,9 +62,9 @@ print(msg.to_dict())
 master.motors_armed_wait()
 logging.info("Armed!")
 
-master.mav.command_long_send(master.target_system, master.target_component,
-                             mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0,
-                             0, 0, 0, 10)
+# master.mav.command_long_send(master.target_system, master.target_component,
+#                              mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0,
+#                              0, 0, 0, 10)
 while True:
     # Local position msg
     # msg = master.recv_match(type='LOCAL_POSITION_NED', blocking=True)
