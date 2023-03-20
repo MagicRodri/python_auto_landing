@@ -1,5 +1,6 @@
 import logging
 import math
+import os
 from typing import Dict, Tuple, Union
 
 from pymavlink import mavutil
@@ -71,7 +72,8 @@ def request_message_interval(master: Union[mavutil.mavfile, mavutil.mavudp,
                                  0)
 
 
-def change_mode(master, mode: str = None):
+def change_mode(master: Union[mavutil.mavfile, mavutil.mavudp, mavutil.mavtcp],
+                mode: str = None):
     if mode is not None:
         mode_id = master.mode_mapping().get(mode)
         master.mav.set_mode_send(
@@ -83,17 +85,17 @@ def change_mode(master, mode: str = None):
             message = mavutil.mavlink.enums["MAV_RESULT"][
                 ack_msg['result']].description
             if message == "Command is valid (is supported and has valid parameters), and was executed.":
-                logging.info("Mode changed to %s"%(mode))
+                logging.info("Mode changed to %s" % (mode))
             else:
                 logging.info(message)
 
 
 def rc_channels_override(master: Union[mavutil.mavfile, mavutil.mavudp,
-                                  mavutil.mavtcp],
-                    id: int = None,
-                    pwm: int = None,
-                    inputs: Dict[int, int] = None,
-                    mavlink2: bool = False) -> None:
+                                       mavutil.mavtcp],
+                         id: int = None,
+                         pwm: int = None,
+                         inputs: Dict[int, int] = None,
+                         mavlink2: bool = False) -> None:
     """Override RC channels with PWM values.
     @param master: MAVLink master instance
     @param id: Channel ID
@@ -102,9 +104,14 @@ def rc_channels_override(master: Union[mavutil.mavfile, mavutil.mavudp,
     @param mavlink2: Use MAVLink 2.0 protocol
         -By default, MAVLink 1.0 protocol is used
     """
-    if inputs is None:
+    if id is not None and pwm is not None:
         inputs = {}
         inputs[id] = pwm
+    if inputs is None:
+        logging.warning('No inputs provided')
+        return
+    if os.environ.get('MAVLINK20') is not None:
+        mavlink2 = True
     max_id = 9
     if mavlink2:
         max_id = 18
@@ -120,10 +127,3 @@ def rc_channels_override(master: Union[mavutil.mavfile, mavutil.mavudp,
     master.mav.rc_channels_override_send(master.target_system,
                                          master.target_component,
                                          *rc_channel_values)
-
-def stop_rc_override(master: Union[mavutil.mavfile, mavutil.mavudp,
-                                  mavutil.mavtcp]) -> None:
-    """Stop RC override.
-    @param master: MAVLink master instance
-    """
-    rc_channels_override(master, 0, 0)
