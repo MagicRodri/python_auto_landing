@@ -2,65 +2,12 @@ import logging
 import math
 from pathlib import Path
 import time
-from typing import Union
-import os
 
+import time
 import numpy as np
 from aruco_tracker import ArucoSingleTracker
 from pymavlink import mavutil
-from utils import change_mode
-
-
-def send_altitude(master: Union[mavutil.mavfile, mavutil.mavudp,
-                                      mavutil.mavtcp],distance:int):
-    """
-    Send altitude to FCU to enable altitude hold
-    """
-    sensor_id = 1
-    orientation = 25
-    covariance = 70
-    master.mav.distance_sensor_send(0, 10, 1000, distance,
-                                    mavutil.mavlink.MAV_DISTANCE_SENSOR_ULTRASOUND, sensor_id, orientation,
-                                    covariance)
-    # logging.info(f"Sending rangefinder altitude: {distance}")
-
-def send_landing_target(master: Union[mavutil.mavfile,
-                                           mavutil.mavudp,
-                                           mavutil.mavtcp],
-                        distance:float,
-                        x_angle:float,
-                        y_angle:float,
-                        time_usec:int):
-    x = 0.0
-    y = 0.0
-    z = 0.0
-    msg = master.mav.landing_target_encode(
-    time_usec, # Timestamp
-    0, # Target num
-    mavutil.mavlink.MAV_FRAME_BODY_NED, # Frame,not used?
-    x_angle,
-    y_angle,
-    distance, # Distance
-    0.2, # size_x
-    0.2, # size_y
-    # x, # X position in meters
-    # y, # Y position in meters
-    # z, # Z position in meters
-    # (1,0,0,0), # quaternion
-    # 2, # Target type: 2 = Fiducial marker
-    # 1, # position valid
-    )
-    master.mav.send(msg)   
-    # logging.info("sent landing target")
-
-def marker_position_to_angle(x:float, y:float, z:float):
-    """
-    Converts marker position to angle
-    """
-    angle_x = round(math.atan2(x,z),2)
-    angle_y = round(math.atan2(y,z),2)
-    
-    return (angle_x, angle_y)
+from utils import play_buzzer_tune,send_altitude,marker_position_to_angle,send_landing_target
 
 def camera_to_target(x_cam:float, y_cam:float):
     x_target,y_target = round(x_cam,2),round(y_cam,2)
@@ -88,10 +35,12 @@ def main():
 
     master = mavutil.mavlink_connection(device="127.0.0.1:14551")
     master.wait_heartbeat()
+    
     while True:
         logging.basicConfig(level=logging.INFO)
         marker_found, x_cm, y_cm, z_cm = aruco_tracker.track(loop=False,verbose=False)
         if marker_found:
+            play_buzzer_tune(master,"T200O2L1A#") # constantly play tune when marker found
             x_cm, y_cm = camera_to_target(x_cm, y_cm)
             z_cm = round(z_cm,2)
             logging.info(f"Marker found at ({x_cm}, {y_cm}, {z_cm})")
@@ -100,8 +49,9 @@ def main():
         
             if time.time() >= time_0 + 1.0/freq_send:
                 time_0 = time.time()
+                distance_m = math.sqrt(x_cm*x_cm + y_cm*y_cm + z_cm*z_cm) * 0.01 # 3D distance, maybe altitude?
                 send_landing_target(master,
-                                    distance=z_cm*0.01,
+                                    distance=distance_m,
                                     x_angle=angle_x,
                                     y_angle=angle_y,
                                     time_usec=int(time.time()*1e6))

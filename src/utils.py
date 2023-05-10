@@ -31,11 +31,13 @@ def get_location_metres(original_location, dNorth, dEast):
     return (newlat, newlon)
 
 
-def marker_position_to_angle(x, y, z):
-
-    angle_x = math.atan2(x, z)
-    angle_y = math.atan2(y, z)
-
+def marker_position_to_angle(x:float, y:float, z:float):
+    """
+    Converts marker position to angle
+    """
+    angle_x = round(math.atan2(x,z),2)
+    angle_y = round(math.atan2(y,z),2)
+    
     return (angle_x, angle_y)
 
 
@@ -127,3 +129,83 @@ def rc_channels_override(master: Union[mavutil.mavfile, mavutil.mavudp,
     master.mav.rc_channels_override_send(master.target_system,
                                          master.target_component,
                                          *rc_channel_values)
+
+def play_buzzer_tune(master: Union[mavutil.mavfile, mavutil.mavudp,
+                                      mavutil.mavtcp],tune:str):
+    """Function to play a tune on the buzzer.
+    Parameters
+    ----------
+    master : mavutil.mavlink.MAVLink_connection
+        MAVLink connection to the FCU.
+    tune : str
+        Tune to play.
+    """
+    # Encode the tune
+    # Note: The MAVLink play_tune_encode() function expects a string
+    # with UTF-8 encoding.
+    # https://mavlink.io/en/messages/common.html#PLAY_TUNE
+    msg = master.mav.play_tune_encode(
+        master.target_system, # Target system
+        master.target_component, # Target component
+        tune.encode('utf-8'), # Tune string
+    )
+    # Send the message
+    master.mav.send(msg)
+
+def send_altitude(master: Union[mavutil.mavfile, mavutil.mavudp,
+                                      mavutil.mavtcp],distance:int):
+    """
+    Send altitude to FCU to enable altitude hold
+    """
+    sensor_id = 1
+    orientation = 25
+    covariance = 70
+    master.mav.distance_sensor_send(0, 10, 1000, distance,
+                                    mavutil.mavlink.MAV_DISTANCE_SENSOR_ULTRASOUND, sensor_id, orientation,
+                                    covariance)
+    # logging.info(f"Sending rangefinder altitude: {distance}")
+
+
+def send_landing_target(master: Union[mavutil.mavfile,
+                                           mavutil.mavudp,
+                                           mavutil.mavtcp],
+                        distance:float,
+                        x_angle:float,
+                        y_angle:float,
+                        time_usec:int):
+    """Function  to send landing target to FCU
+    Parameters
+    ----------
+    master : mavutil.mavlink.MAVLink_connection
+        MAVLink connection to the FCU.
+    distance : float
+        Distance to the target in meters.
+    x_angle : float
+        X angle of the target in radians.
+    y_angle : float
+        Y angle of the target in radians.
+    time_usec : int
+        Timestamp in microseconds.
+    """
+    # logging.info(f"Sending landing target: {distance}, {x_angle}, {y_angle}, {time_usec}")
+    x = 0.0
+    y = 0.0
+    z = 0.0
+    msg = master.mav.landing_target_encode(
+    time_usec, # Timestamp
+    0, # Target num
+    mavutil.mavlink.MAV_FRAME_BODY_NED, # Frame,not used?
+    x_angle,
+    y_angle,
+    distance, # Distance
+    0.0, # size_x
+    0.0, # size_y
+    # x, # X position in meters
+    # y, # Y position in meters
+    # z, # Z position in meters
+    # (1,0,0,0), # quaternion
+    # 2, # Target type: 2 = Fiducial marker
+    # 1, # position valid
+    )
+    master.mav.send(msg)   
+    # logging.info("sent landing target")
