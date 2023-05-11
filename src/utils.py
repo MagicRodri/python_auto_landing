@@ -3,7 +3,38 @@ import math
 import os
 from typing import Dict, Tuple, Union
 
+import numpy as np
 from pymavlink import mavutil
+
+
+def rotation_matrix_to_euler_angles(R: np.ndarray) -> np.ndarray:
+    # Calculates rotation matrix to euler angles
+    # The result is the same as MATLAB except the order
+    # of the euler angles ( x and z are swapped ).
+
+    def is_rotation_matrix(R):
+        Rt = np.transpose(R)
+        shouldBeIdentity = np.dot(Rt, R)
+        I = np.identity(3, dtype=R.dtype)
+        n = np.linalg.norm(I - shouldBeIdentity)
+        return n < 1e-6
+
+    assert (is_rotation_matrix(R))
+
+    sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+
+    singular = sy < 1e-6
+
+    if not singular:
+        x = math.atan2(R[2, 1], R[2, 2])
+        y = math.atan2(-R[2, 0], sy)
+        z = math.atan2(R[1, 0], R[0, 0])
+    else:
+        x = math.atan2(-R[1, 2], R[1, 1])
+        y = math.atan2(-R[2, 0], sy)
+        z = 0
+
+    return np.array([x, y, z])
 
 
 def get_location_metres(original_location, dNorth, dEast):
@@ -31,13 +62,13 @@ def get_location_metres(original_location, dNorth, dEast):
     return (newlat, newlon)
 
 
-def marker_position_to_angle(x:float, y:float, z:float):
+def marker_position_to_angle(x: float, y: float, z: float):
     """
     Converts marker position to angle
     """
-    angle_x = round(math.atan2(x,z),2)
-    angle_y = round(math.atan2(y,z),2)
-    
+    angle_x = round(math.atan2(x, z), 2)
+    angle_y = round(math.atan2(y, z), 2)
+
     return (angle_x, angle_y)
 
 
@@ -130,8 +161,9 @@ def rc_channels_override(master: Union[mavutil.mavfile, mavutil.mavudp,
                                          master.target_component,
                                          *rc_channel_values)
 
+
 def play_buzzer_tune(master: Union[mavutil.mavfile, mavutil.mavudp,
-                                      mavutil.mavtcp],tune:str):
+                                   mavutil.mavtcp], tune: str):
     """Function to play a tune on the buzzer.
     Parameters
     ----------
@@ -145,34 +177,31 @@ def play_buzzer_tune(master: Union[mavutil.mavfile, mavutil.mavudp,
     # with UTF-8 encoding.
     # https://mavlink.io/en/messages/common.html#PLAY_TUNE
     msg = master.mav.play_tune_encode(
-        master.target_system, # Target system
-        master.target_component, # Target component
-        tune.encode('utf-8'), # Tune string
+        master.target_system,  # Target system
+        master.target_component,  # Target component
+        tune.encode('utf-8'),  # Tune string
     )
     # Send the message
     master.mav.send(msg)
 
+
 def send_altitude(master: Union[mavutil.mavfile, mavutil.mavudp,
-                                      mavutil.mavtcp],distance:int):
+                                mavutil.mavtcp], distance: int):
     """
     Send altitude to FCU to enable altitude hold
     """
     sensor_id = 1
     orientation = 25
     covariance = 70
-    master.mav.distance_sensor_send(0, 10, 1000, distance,
-                                    mavutil.mavlink.MAV_DISTANCE_SENSOR_ULTRASOUND, sensor_id, orientation,
-                                    covariance)
+    master.mav.distance_sensor_send(
+        0, 10, 1000, distance, mavutil.mavlink.MAV_DISTANCE_SENSOR_ULTRASOUND,
+        sensor_id, orientation, covariance)
     # logging.info(f"Sending rangefinder altitude: {distance}")
 
 
-def send_landing_target(master: Union[mavutil.mavfile,
-                                           mavutil.mavudp,
-                                           mavutil.mavtcp],
-                        distance:float,
-                        x_angle:float,
-                        y_angle:float,
-                        time_usec:int):
+def send_landing_target(master: Union[mavutil.mavfile, mavutil.mavudp,
+                                      mavutil.mavtcp], distance: float,
+                        x_angle: float, y_angle: float, time_usec: int):
     """Function  to send landing target to FCU
     Parameters
     ----------
@@ -192,20 +221,20 @@ def send_landing_target(master: Union[mavutil.mavfile,
     y = 0.0
     z = 0.0
     msg = master.mav.landing_target_encode(
-    time_usec, # Timestamp
-    0, # Target num
-    mavutil.mavlink.MAV_FRAME_BODY_NED, # Frame,not used?
-    x_angle,
-    y_angle,
-    distance, # Distance
-    0.0, # size_x
-    0.0, # size_y
-    # x, # X position in meters
-    # y, # Y position in meters
-    # z, # Z position in meters
-    # (1,0,0,0), # quaternion
-    # 2, # Target type: 2 = Fiducial marker
-    # 1, # position valid
+        time_usec,  # Timestamp
+        0,  # Target num
+        mavutil.mavlink.MAV_FRAME_BODY_NED,  # Frame,not used?
+        x_angle,
+        y_angle,
+        distance,  # Distance
+        0.0,  # size_x
+        0.0,  # size_y
+        # x, # X position in meters
+        # y, # Y position in meters
+        # z, # Z position in meters
+        # (1,0,0,0), # quaternion
+        # 2, # Target type: 2 = Fiducial marker
+        # 1, # position valid
     )
-    master.mav.send(msg)   
+    master.mav.send(msg)
     # logging.info("sent landing target")
