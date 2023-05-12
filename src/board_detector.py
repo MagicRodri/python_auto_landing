@@ -1,7 +1,8 @@
 import logging
 import math
 from pathlib import Path
-from typing import Optional, Tuple
+import sys
+from typing import Union, Tuple
 
 import cv2
 import numpy as np
@@ -12,10 +13,10 @@ class BoardDetector:
     """Board detector class"""
 
     def __init__(self,
-                 board_layout_path: str | Path,
-                 calibration_path: str | Path,
+                 board_layout_path: Union[str,Path],
+                 calibration_path: Union[str,Path],
                  *,
-                 detector_parameters_path: str | Path = None,
+                 detector_parameters_path: Union[str,Path] = None,
                  video_device: int = 0,
                  resolution: Tuple[int] = (640, 480),
                  debug: bool = False) -> None:
@@ -72,7 +73,7 @@ class BoardDetector:
             z = 0
         return np.array([x, y, z])
 
-    def _load_board_data(self, file_path: str | Path) -> Tuple[np.array]:
+    def _load_board_data(self, file_path: Union[str,Path]) -> Tuple[np.array]:
         """ Load board's data """
         with open(file_path, 'r') as file:
             data = yaml.load(file, Loader=yaml.SafeLoader)
@@ -82,7 +83,7 @@ class BoardDetector:
             return corners, ids
 
     def _load_camera_parameters(self,
-                                file_path: str | Path) -> Tuple[np.array]:
+                                file_path: Union[str,Path]) -> Tuple[np.array]:
         """ Load camera's calibration data """
         with open(file_path, 'r') as file:
             data = yaml.load(file, Loader=yaml.SafeLoader)
@@ -91,7 +92,7 @@ class BoardDetector:
             return camera_matrix, distortion_coeffs
 
     def _load_detector_parameters(
-            self, file_path: str | Path) -> cv2.aruco_DetectorParameters:
+            self, file_path: Union[str,Path]) -> cv2.aruco_DetectorParameters:
         """ Load detector parameters from yaml file """
         params = cv2.aruco.DetectorParameters_create()
         if file_path is not None:
@@ -105,7 +106,7 @@ class BoardDetector:
         if self.debug:
             logging.info(text)
 
-    def run(self, loop: bool = True, display: bool = False) -> None | Tuple:
+    def run(self, loop: bool = True, display: bool = False) -> Union[None,Tuple]:
         """Main method responsible of running detection
            Returns None if loop = True
                    tuple(bool,np.array,np.array) if loop = False
@@ -190,14 +191,14 @@ class BoardDetector:
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    BASE_DIR = Path(
-        '__file__').resolve().parent / 'src'  # Run from root directory
+    BASE_DIR = Path(sys.argv[0]).resolve().parent
     BOARD_DATA_DIR = BASE_DIR / 'board_data'
     CALIBRATION_DIR = BASE_DIR / 'calibration_data'
     detector = BoardDetector(
         board_layout_path=BOARD_DATA_DIR / 'board_layout.yaml',
         calibration_path=CALIBRATION_DIR / 'calibration.yaml',
         detector_parameters_path=BOARD_DATA_DIR / 'detector_params.yaml',
-        debug=False)
+        debug=True,
+        video_device=1)
 
-    detector.run(loop=True, display=True)
+    detector.run(loop=True, display=False)

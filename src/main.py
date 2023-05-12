@@ -194,9 +194,9 @@ async def main():
     # master.arducopter_arm()
     # master.motors_armed_wait()
     # logging.info("Armed!")
-    landing_target_task = asyncio.create_task(send_landing_target(master))
-    send_altitude_task = asyncio.create_task(send_altitude(master))
-    await asyncio.gather(landing_target_task,send_altitude_task)
+    # landing_target_task = asyncio.create_task(send_landing_target(master))
+    # send_altitude_task = asyncio.create_task(send_altitude(master))
+    # await asyncio.gather(landing_target_task,send_altitude_task)
     # await send_landing_target(master)
 
 if __name__ == "__main__":
