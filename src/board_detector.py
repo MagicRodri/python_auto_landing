@@ -111,8 +111,8 @@ class BoardDetector:
            Returns None if loop = True
                    tuple(bool,np.array,np.array) if loop = False
         """
-        marker_coordinates = np.array([0, 0, 0])
-        marker_rpy = np.array([0, 0, 0])
+        camera_coordinates = np.array([0, 0, 0])
+        camera_rpy = np.array([0, 0, 0])
         if loop:
             logging.info('Starting detection...')
 
@@ -158,24 +158,24 @@ class BoardDetector:
                                                self.distortion_coeffs, rvec,
                                                tvec, 0.4)
                         # Camera's coordinates in board's coordinate system (millimeters)
-                        marker_coordinates = tvec.flatten()
+                        camera_coordinates = tvec.flatten()
                         # the rotation matrix tag->camera
                         R_ct = np.matrix(cv2.Rodrigues(rvec)[0])
                         R_tc = R_ct.T
-                        marker_rpy = self._rotation_matrix_to_euler_angles(
+                        camera_rpy = self._rotation_matrix_to_euler_angles(
                             R_tc)
                         self._log_info(
-                            f'x:{marker_coordinates[0]}, y:{marker_coordinates[1]}, z:{marker_coordinates[2]}'
+                            f'x:{camera_coordinates[0]}, y:{camera_coordinates[1]}, z:{camera_coordinates[2]}'
                         )
                         self._log_info(
-                            f'roll:{marker_rpy[0]}, pitch:{marker_rpy[1]}, yaw:{marker_rpy[2]}'
+                            f'roll:{camera_rpy[0]}, pitch:{camera_rpy[1]}, yaw:{camera_rpy[2]}'
                         )
                         found = True
                     else:
                         self._log_info('Board not detected')
             # Return result if not detecting in a loop
             if not loop:
-                return found, marker_coordinates, marker_rpy
+                return found, camera_coordinates, camera_rpy
             # Display the results
             if display:
                 cv2.imshow('Detected Markers', image_markers)

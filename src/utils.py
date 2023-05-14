@@ -217,24 +217,16 @@ def send_landing_target(master: Union[mavutil.mavfile, mavutil.mavudp,
         Timestamp in microseconds.
     """
     # logging.info(f"Sending landing target: {distance}, {x_angle}, {y_angle}, {time_usec}")
-    x = 0.0
-    y = 0.0
-    z = 0.0
+   
     msg = master.mav.landing_target_encode(
-        time_usec,  # Timestamp
+        time_usec,  # Timestamp, not used
         0,  # Target num
-        mavutil.mavlink.MAV_FRAME_BODY_NED,  # Frame,not used?
+        mavutil.mavlink.MAV_FRAME_BODY_NED,  # Frame,not used
         x_angle,
         y_angle,
         distance,  # Distance
         0.0,  # size_x
         0.0,  # size_y
-        # x, # X position in meters
-        # y, # Y position in meters
-        # z, # Z position in meters
-        # (1,0,0,0), # quaternion
-        # 2, # Target type: 2 = Fiducial marker
-        # 1, # position valid
     )
     master.mav.send(msg)
     # logging.info("sent landing target")
