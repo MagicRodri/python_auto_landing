@@ -1,8 +1,8 @@
 import logging
 import math
-from pathlib import Path
 import sys
-from typing import Union, Tuple
+from pathlib import Path
+from typing import Tuple, Union
 
 import cv2
 import numpy as np
@@ -199,6 +199,6 @@ if __name__ == '__main__':
         calibration_path=CALIBRATION_DIR / 'calibration.yaml',
         detector_parameters_path=BOARD_DATA_DIR / 'detector_params.yaml',
         debug=True,
-        video_device=1)
+        video_device=0)
 
     detector.run(loop=True, display=False)
