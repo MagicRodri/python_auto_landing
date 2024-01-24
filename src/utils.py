@@ -167,10 +167,8 @@ def play_buzzer_tune(master: Union[mavutil.mavfile, mavutil.mavudp,
     """Function to play a tune on the buzzer.
     Parameters
     ----------
-    master : mavutil.mavlink.MAVLink_connection
-        MAVLink connection to the FCU.
-    tune : str
-        Tune to play.
+    master : MAVLink connection to the FCU.
+    tune : Tune to play.
     """
     # Encode the tune
     # Note: The MAVLink play_tune_encode() function expects a string
