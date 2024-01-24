@@ -205,16 +205,11 @@ def send_landing_target(master: Union[mavutil.mavfile, mavutil.mavudp,
     """Function  to send landing target to FCU
     Parameters
     ----------
-    master : mavutil.mavlink.MAVLink_connection
-        MAVLink connection to the FCU.
-    distance : float
-        Distance to the target in meters.
-    x_angle : float
-        X angle of the target in radians.
-    y_angle : float
-        Y angle of the target in radians.
-    time_usec : int
-        Timestamp in microseconds.
+    master : MAVLink connection to the FCU.
+    distance : Distance to the target in meters.
+    x_angle : X angle of the target in radians.
+    y_angle : angle of the target in radians.
+    time_usec : Timestamp in microseconds
     """
     # logging.info(f"Sending landing target: {distance}, {x_angle}, {y_angle}, {time_usec}")
    
